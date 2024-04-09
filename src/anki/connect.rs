@@ -17,6 +17,7 @@ type Fields = HashMap<String, Field>;
 pub struct AnkiConnect {
     version: u32,
     client: reqwest::blocking::Client,
+    hostname: String,
 }
 
 #[derive(Deserialize)]
@@ -66,13 +67,18 @@ impl AnkiConnect {
         Self {
             version: 6,
             client: reqwest::blocking::Client::new(),
+            hostname: "http://172.18.48.1".to_string(),
         }
     }
 
-    fn invoke<P, T>(&self, action: &str, params: Option<P>) -> AnkiConnectResult<T>
+    fn invoke<TParams, TResult>(
+        &self,
+        action: &str,
+        params: Option<TParams>,
+    ) -> AnkiConnectResult<TResult>
     where
-        P: Serialize,
-        T: DeserializeOwned,
+        TParams: Serialize,
+        TResult: DeserializeOwned,
     {
         let request = AnkiconnectRequest {
             version: self.version,
@@ -80,20 +86,18 @@ impl AnkiConnect {
             params,
         };
 
-        let response = self
-            .client
-            .post("http://localhost:8765")
-            .json(&request)
-            .build()?;
+        let address = format!("{}:8765", self.hostname);
+
+        let response = self.client.post(&address).json(&request).build()?;
 
         dbg!(response.body());
 
         let response = self
             .client
-            .post("http://localhost:8765")
+            .post(&address)
             .json(&request)
             .send()?
-            .json::<AnkiConnectResponse<T>>()?;
+            .json::<AnkiConnectResponse<TResult>>()?;
 
         if let Some(error) = response.error {
             return Err(error.into());
