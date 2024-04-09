@@ -1,17 +1,7 @@
-use anki::connect::AnkiConnect;
-
-mod anki;
+use anki_utils::field_validation;
+use anki_utils::field_validation::ValidationConfig;
 
 fn main() {
-    let connector = AnkiConnect::new();
-    let query = "mid:1576932125743";
-    // let query = "note:Basic";
-
-    let models = connector.model_names_and_ids().unwrap();
-    let note_ids = connector.find_notes(query).unwrap();
-    let notes = connector.notes_info(&note_ids).unwrap();
-
-    dbg!(models);
-    dbg!(note_ids);
-    dbg!(notes);
+    let config = ValidationConfig::new();
+    field_validation::execute(config);
 }
