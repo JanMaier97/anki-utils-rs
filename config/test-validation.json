@@ -1,0 +1,12 @@
+{
+    "model_id": 1576932125743,
+    "field_validations": {
+        "Type": [
+            {"type": "Required"},
+            {"type": "ValueList", "check": ["u-Vt", "u-Vi"]}
+        ],
+        "Pitch": [
+            {"type": "MustNotInclude", "check": "No pitch accent data available"}
+        ]
+    }
+}

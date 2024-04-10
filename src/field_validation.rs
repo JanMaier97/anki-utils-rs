@@ -1,30 +1,13 @@
+use serde::Deserialize;
 use std::collections::HashMap;
 
 use crate::anki::connect::{AnkiConnect, NoteInfo};
 use crate::MyResult;
 
+#[derive(Debug, Deserialize)]
 pub struct ValidationConfig {
     model_id: u64,
     field_validations: HashMap<String, Vec<ValidationType>>,
-}
-
-impl ValidationConfig {
-    pub fn new() -> Self {
-        let mut fields = HashMap::new();
-
-        let validations = vec![
-            ValidationType::Required,
-            ValidationType::ValueList(vec!["u-Vt".to_string(), "u-Vi".to_string()]),
-        ];
-
-        fields.insert("Type".to_string(), validations);
-        fields.insert("Pitch".to_string(), vec![ValidationType::MustNotInclude("No pitch accent data available".to_string())]);
-
-        ValidationConfig {
-            model_id: 1576932125743,
-            field_validations: fields,
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -39,7 +22,8 @@ pub struct ValidationError {
     note_ids: Vec<u64>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize)]
+#[serde(tag = "type", content = "check")]
 pub enum ValidationType {
     Required,
     ValueList(Vec<String>),
@@ -57,7 +41,6 @@ impl ValidationType {
                 }
                 value
                 .split(',')
-                .inspect(|s| println!("checking if '{}' in list", s))
                 .map(|s| s.trim().to_string())
                 .all(|s| values.contains(&s))
             }
