@@ -14,10 +14,11 @@ impl ValidationConfig {
 
         let validations = vec![
             ValidationType::Required,
-            ValidationType::ValueList(vec!["u-Vt".to_string(), "u-Vi".to_string()])
+            ValidationType::ValueList(vec!["u-Vt".to_string(), "u-Vi".to_string()]),
         ];
 
         fields.insert("Type".to_string(), validations);
+        fields.insert("Pitch".to_string(), vec![ValidationType::MustNotInclude("No pitch accent data available".to_string())]);
 
         ValidationConfig {
             model_id: "1576932125743".to_string(),
@@ -42,12 +43,14 @@ pub struct ValidationError {
 pub enum ValidationType {
     Required,
     ValueList(Vec<String>),
+    MustNotInclude(String),
 }
 
 impl ValidationType {
     fn is_valid(&self, value: &str) -> bool {
         match self {
             ValidationType::Required => !value.trim().is_empty(),
+            ValidationType::MustNotInclude(invalid_value) => !value.contains(invalid_value),
             ValidationType::ValueList(values) => {
                 if value.is_empty() {
                     return true;
@@ -64,6 +67,7 @@ impl ValidationType {
     fn get_message(&self) -> String {
         match self {
             ValidationType::Required => "Missing required value".to_string(),
+            ValidationType::MustNotInclude(invalid_value) => format!("Field contains invalid value '{}'", invalid_value),
             ValidationType::ValueList(values) => format!(
                 "Field must only contain valid values: {}",
                 values.join(", ")
