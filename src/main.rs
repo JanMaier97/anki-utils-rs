@@ -1,7 +1,10 @@
-use anki_utils::field_validation;
+use anki_utils::{field_validation, MyResult};
 use anki_utils::field_validation::ValidationConfig;
 
-fn main() {
+fn main() -> MyResult<()> {
     let config = ValidationConfig::new();
-    field_validation::execute(config);
+    let result = field_validation::execute(&config)?;
+
+    dbg!(result);
+    Ok(())
 }

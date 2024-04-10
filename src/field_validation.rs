@@ -1,27 +1,112 @@
-use crate::anki::connect::AnkiConnect;
+use std::collections::HashMap;
+
+use crate::anki::connect::{AnkiConnect, NoteInfo};
 use crate::MyResult;
 
-pub struct ValidationConfig {}
+pub struct ValidationConfig 
+{
+    model_id: String,
+    field_validations: HashMap<String, Vec<ValidationType>>,
+}
 
 impl ValidationConfig {
     pub fn new() -> Self {
-        ValidationConfig {}
+        
+        let mut fields = HashMap::new();
+        fields.insert("Type".to_string(), vec![ValidationType::Required]);
+
+        ValidationConfig {
+            model_id: "1576932125743".to_string(),
+            field_validations: fields,
+        }
     }
 }
 
-pub fn execute(config: ValidationConfig) -> MyResult<()> {
+#[derive(Debug)]
+pub struct ValidationResult
+{
+    pub total_note_count: usize,
+    pub failed_note_count: usize,
+    pub validation_errors: HashMap<u64, HashMap<String, ValidationType>>,
+}
+
+pub struct ValidationError 
+{
+    message: String,
+    note_ids: Vec<u64>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum ValidationType {
+    Required
+}
+
+impl ValidationType {
+
+    fn is_valid(&self, value: &str) -> bool {
+        match self {
+            ValidationType::Required => !value.is_empty(),
+        }
+    }
+
+    fn get_message(&self) -> String {
+        match self {
+            ValidationType::Required => "Missing required value".to_string(),
+        }
+    }
+}
+
+pub fn execute(config: &ValidationConfig) -> MyResult<ValidationResult> {
     let connector = AnkiConnect::new();
-    let query = "mid:1576932125743";
-    // let query = "note:Basic";
 
-    let models = connector.model_names_and_ids().unwrap();
-    // let note_ids = connector.find_notes(query).unwrap();
-    // let notes = connector.notes_info(&note_ids).unwrap();
+    validate_config(config, &connector)?;
 
-    dbg!(models);
+    // let models = connector.model_names_and_ids().unwrap();
+    // dbg!(models);
 
-    // dbg!(note_ids);
-    // dbg!(notes);
+    execute_validation(config, &connector)
+}
 
+fn validate_config(config: &ValidationConfig, connector: &AnkiConnect) -> MyResult<()> 
+{
     Ok(())
+}
+
+fn execute_validation(config: &ValidationConfig, connector: &AnkiConnect) -> MyResult<ValidationResult> {
+    let query = format!("mid:{}", config.model_id);
+    let note_ids = connector.find_notes(&query).unwrap();
+    let notes = connector.notes_info(&note_ids).unwrap();
+
+
+    let mut failed_notes: HashMap<u64, HashMap<String, ValidationType>> = HashMap::new();
+    for note in notes.iter() {
+        let failed_validations = get_first_failing_validation_per_field(&note, config)?;
+        if !failed_validations.is_empty() {
+            failed_notes.insert(note.note_id, failed_validations);
+        }
+    }
+
+    let result = ValidationResult {
+        total_note_count: notes.len(),
+        failed_note_count: failed_notes.len(),
+        validation_errors: failed_notes,
+    };
+
+    Ok(result)
+}
+
+fn get_first_failing_validation_per_field(note: &NoteInfo, config: &ValidationConfig) -> MyResult<HashMap<String, ValidationType>>
+{
+    let mut result: HashMap<String, ValidationType> = HashMap::new();
+    for (field_name, validations) in config.field_validations.iter() {
+        for validation in validations {
+            let field = note.fields.get(field_name).ok_or(format!("The field '{}' for note type '{}' does not exist", field_name, config.model_id))?;
+            if !validation.is_valid(&field.value)
+            {
+                result.insert(field_name.clone(), *validation);
+            }
+        }
+    }
+
+    Ok(result)
 }

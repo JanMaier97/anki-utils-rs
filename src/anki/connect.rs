@@ -5,7 +5,7 @@ pub type AnkiConnectResult<T> = Result<T, Box<dyn Error>>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Field {
-    value: String,
+    pub value: String,
     order: u32,
 }
 
@@ -46,10 +46,10 @@ pub struct NewNote<'a> {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct NoteInfo {
-    note_id: NoteId,
+    pub note_id: NoteId,
     model_name: String,
     tags: Vec<String>,
-    fields: Fields,
+    pub fields: Fields,
 }
 
 #[derive(Serialize)]
