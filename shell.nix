@@ -6,6 +6,7 @@ pkgs.mkShell {
         cargo
         rustc
         rustfmt
+        rust-analyzer
         pkg-config 
         openssl.dev
     ];
