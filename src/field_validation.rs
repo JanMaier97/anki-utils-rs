@@ -4,7 +4,7 @@ use crate::anki::connect::{AnkiConnect, NoteInfo};
 use crate::MyResult;
 
 pub struct ValidationConfig {
-    model_id: String,
+    model_id: u64,
     field_validations: HashMap<String, Vec<ValidationType>>,
 }
 
@@ -21,7 +21,7 @@ impl ValidationConfig {
         fields.insert("Pitch".to_string(), vec![ValidationType::MustNotInclude("No pitch accent data available".to_string())]);
 
         ValidationConfig {
-            model_id: "1576932125743".to_string(),
+            model_id: 1576932125743,
             field_validations: fields,
         }
     }
