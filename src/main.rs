@@ -1,12 +1,21 @@
 use anki_utils::anki::connect::AnkiConnect;
 use anki_utils::field_validation::ValidationConfig;
 use anki_utils::field_validation::ValidationResult;
+use anki_utils::field_validation::ValidationType;
 use anki_utils::{field_validation, MyResult};
+use clap::ValueEnum;
 
 use clap::Parser;
 
 use std::fs::File;
 use std::io::BufReader;
+
+#[derive(Clone, PartialEq, ValueEnum)]
+enum CliValidationType {
+    Required,
+    ValueList,
+    MustNotInclude,
+}
 
 #[derive(Parser)]
 #[command(name = "Anki Field Validator")]
@@ -27,6 +36,13 @@ struct CliArgs {
         help = "Only validate the fields specified with this argument"
     )]
     fields: Vec<String>,
+    #[arg(
+        short,
+        long,
+        value_enum,
+        help = "Only apply the validations specified with this argument"
+    )]
+    validations: Vec<CliValidationType>,
 }
 
 fn main() -> MyResult<()> {
@@ -52,6 +68,34 @@ fn main() -> MyResult<()> {
 }
 
 fn apply_cli_args_on_config(config: &mut ValidationConfig, args: &CliArgs) -> MyResult<()> {
+    apply_field_filter(config, args)?;
+    apply_validation_filter(config, args)
+}
+
+fn apply_validation_filter(config: &mut ValidationConfig, args: &CliArgs) -> MyResult<()> {
+    if args.validations.is_empty() {
+        return Ok(());
+    }
+
+    for (_, validations) in config.field_validations.iter_mut() {
+        *validations = validations
+            .iter()
+            .filter(|t| args.validations.contains(&map_validation_type(t)))
+            .cloned()
+            .collect::<Vec<_>>();
+    }
+
+    Ok(())
+}
+
+fn map_validation_type(validation_type: &ValidationType) -> CliValidationType {
+    match validation_type {
+        ValidationType::Required => CliValidationType::Required,
+        ValidationType::ValueList(_) => CliValidationType::ValueList,
+        ValidationType::MustNotInclude(_) => CliValidationType::MustNotInclude,
+    }
+}
+fn apply_field_filter(config: &mut ValidationConfig, args: &CliArgs) -> MyResult<()> {
     if args.fields.is_empty() {
         return Ok(());
     }
