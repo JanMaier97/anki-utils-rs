@@ -16,16 +16,27 @@ use std::io::BufReader;
 )]
 struct CliArgs {
     config_file: String,
-    #[arg(long, help = "Automatically opens failed notes in the Anki note browser")]
-    browse: bool
+    #[arg(
+        long,
+        help = "Automatically opens failed notes in the Anki note browser"
+    )]
+    browse: bool,
+    #[arg(
+        short,
+        long,
+        help = "Only validate the fields specified with this argument"
+    )]
+    fields: Vec<String>,
 }
 
 fn main() -> MyResult<()> {
     let cli = CliArgs::parse();
 
-    let f = File::open(cli.config_file)?;
+    let f = File::open(&cli.config_file)?;
     let reader = BufReader::new(f);
-    let config: ValidationConfig = serde_json::from_reader(reader)?;
+    let mut config: ValidationConfig = serde_json::from_reader(reader)?;
+
+    apply_cli_args_on_config(&mut config, &cli)?;
 
     let connector = AnkiConnect::default();
     let result = field_validation::execute(&config, &connector)?;
@@ -35,6 +46,41 @@ fn main() -> MyResult<()> {
     if cli.browse {
         let note_ids = result.validation_errors.keys().cloned().collect::<Vec<_>>();
         connector.browse_notes(&note_ids)?;
+    }
+
+    Ok(())
+}
+
+fn apply_cli_args_on_config(config: &mut ValidationConfig, args: &CliArgs) -> MyResult<()> {
+    if args.fields.is_empty() {
+        return Ok(());
+    }
+
+    let config_fields: Vec<_> = config.field_validations.keys().cloned().collect();
+
+    let invalid_fields: Vec<_> = args
+        .fields
+        .iter()
+        .filter(|f| !config_fields.contains(f))
+        .map(|f| format!("'{}'", f))
+        .collect();
+
+    if !invalid_fields.is_empty() {
+        let field_list = invalid_fields.join(", ");
+        let message = format!(
+            "The fields filter must specify fields from the config: {}",
+            field_list
+        );
+        return Err(message.into());
+    }
+
+    let fields_to_remove: Vec<_> = config_fields
+        .into_iter()
+        .filter(|f| !args.fields.contains(f))
+        .collect();
+
+    for field in fields_to_remove {
+        config.field_validations.remove(&field);
     }
 
     Ok(())

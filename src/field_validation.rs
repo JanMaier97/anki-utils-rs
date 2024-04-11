@@ -7,7 +7,7 @@ use crate::MyResult;
 #[derive(Debug, Deserialize)]
 pub struct ValidationConfig {
     model_id: u64,
-    field_validations: HashMap<String, Vec<ValidationType>>,
+    pub field_validations: HashMap<String, Vec<ValidationType>>,
 }
 
 #[derive(Debug)]
@@ -57,8 +57,8 @@ impl ValidationType {
 }
 
 pub fn execute(config: &ValidationConfig, connector: &AnkiConnect) -> MyResult<ValidationResult> {
-    validate_config(config, &connector)?;
-    execute_validation(config, &connector)
+    validate_config(config, connector)?;
+    execute_validation(config, connector)
 }
 
 fn validate_config(config: &ValidationConfig, connector: &AnkiConnect) -> MyResult<()> {
