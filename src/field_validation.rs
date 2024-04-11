@@ -17,11 +17,6 @@ pub struct ValidationResult {
     pub validation_errors: HashMap<u64, HashMap<String, ValidationType>>,
 }
 
-pub struct ValidationError {
-    message: String,
-    note_ids: Vec<u64>,
-}
-
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "type", content = "check")]
 pub enum ValidationType {
@@ -63,12 +58,7 @@ impl ValidationType {
 
 pub fn execute(config: &ValidationConfig) -> MyResult<ValidationResult> {
     let connector = AnkiConnect::new();
-
     validate_config(config, &connector)?;
-
-    // let models = connector.model_names_and_ids().unwrap();
-    // dbg!(models);
-
     execute_validation(config, &connector)
 }
 

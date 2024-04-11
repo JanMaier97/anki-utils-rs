@@ -10,8 +10,6 @@ pub struct Field {
 }
 
 type NoteId = u64;
-type ModelId = u64;
-
 type Fields = HashMap<String, Field>;
 
 pub struct AnkiConnect {
@@ -47,8 +45,6 @@ pub struct NewNote<'a> {
 #[serde(rename_all = "camelCase")]
 pub struct NoteInfo {
     pub note_id: NoteId,
-    model_name: String,
-    tags: Vec<String>,
     pub fields: Fields,
 }
 
@@ -93,11 +89,6 @@ impl AnkiConnect {
         };
 
         let address = format!("{}:8765", self.hostname);
-
-        let response = self.client.post(&address).json(&request).build()?;
-
-        dbg!(response.body());
-
         let response = self
             .client
             .post(&address)
@@ -117,27 +108,19 @@ impl AnkiConnect {
     }
 
     pub fn find_notes(&self, query: &str) -> AnkiConnectResult<Vec<NoteId>> {
-        let notes: Vec<NoteId> = self.invoke("findNotes", Some(QueryRequest { query }))?;
-        // let notes: Vec<NoteId> = self.invoke("findNotes", query )?;
-
-        return Ok(notes);
+        self.invoke("findNotes", Some(QueryRequest { query }))
     }
 
     pub fn model_names_and_ids(&self) -> AnkiConnectResult<HashMap<String, u64>> {
-        let models = self.invoke::<(), _>("modelNamesAndIds", None)?;
-
-        return Ok(models);
+        self.invoke::<(), _>("modelNamesAndIds", None)
     }
 
     pub fn get_field_names(&self, model_name: &str) -> AnkiConnectResult<Vec<String>> {
         let request = ModelFieldNamesRequest { model_name };
-
         self.invoke("modelFieldNames", Some(request))
     }
 
     pub fn notes_info(&self, note_ids: &[NoteId]) -> AnkiConnectResult<Vec<NoteInfo>> {
-        let notes = self.invoke("notesInfo", Some(NoteIdsRequest { notes: note_ids }))?;
-
-        return Ok(notes);
+        self.invoke("notesInfo", Some(NoteIdsRequest { notes: note_ids }))
     }
 }
