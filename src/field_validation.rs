@@ -57,7 +57,7 @@ impl ValidationType {
 }
 
 pub fn execute(config: &ValidationConfig) -> MyResult<ValidationResult> {
-    let connector = AnkiConnect::new();
+    let connector = AnkiConnect::default();
     validate_config(config, &connector)?;
     execute_validation(config, &connector)
 }
@@ -103,7 +103,7 @@ fn execute_validation(
 
     let mut failed_notes: HashMap<u64, HashMap<String, ValidationType>> = HashMap::new();
     for note in notes.iter() {
-        let failed_validations = get_first_failing_validation_per_field(&note, config)?;
+        let failed_validations = get_first_failing_validation_per_field(note, config)?;
         if !failed_validations.is_empty() {
             failed_notes.insert(note.note_id, failed_validations);
         }

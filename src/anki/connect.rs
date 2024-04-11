@@ -64,15 +64,17 @@ struct ModelFieldNamesRequest<'a> {
     model_name: &'a str,
 }
 
-impl AnkiConnect {
-    pub fn new() -> Self {
+impl Default for AnkiConnect {
+    fn default() -> Self {
         Self {
             version: 6,
             client: reqwest::blocking::Client::new(),
             hostname: "http://172.18.48.1".to_string(),
         }
     }
+}
 
+impl AnkiConnect {
     fn invoke<TParams, TResult>(
         &self,
         action: &str,
@@ -91,7 +93,7 @@ impl AnkiConnect {
         let address = format!("{}:8765", self.hostname);
         let response = self
             .client
-            .post(&address)
+            .post(address)
             .json(&request)
             .send()?
             .json::<AnkiConnectResponse<TResult>>()?;

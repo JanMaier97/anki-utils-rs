@@ -20,7 +20,7 @@ struct CliArgs {
 fn main() -> MyResult<()> {
     let cli = CliArgs::parse();
 
-    let f = File::open(&cli.config_file)?;
+    let f = File::open(cli.config_file)?;
     let reader = BufReader::new(f);
     let config: ValidationConfig = serde_json::from_reader(reader)?;
 
