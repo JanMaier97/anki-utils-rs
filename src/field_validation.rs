@@ -40,9 +40,9 @@ impl ValidationType {
                     return true;
                 }
                 value
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .all(|s| values.contains(&s))
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .all(|s| values.contains(&s))
             }
         }
     }
@@ -50,7 +50,9 @@ impl ValidationType {
     pub fn get_message(&self) -> String {
         match self {
             ValidationType::Required => "Missing required value".to_string(),
-            ValidationType::MustNotInclude(invalid_value) => format!("Field contains invalid value '{}'", invalid_value),
+            ValidationType::MustNotInclude(invalid_value) => {
+                format!("Field contains invalid value '{}'", invalid_value)
+            }
             ValidationType::ValueList(values) => format!(
                 "Field must only contain valid values: {}",
                 values.join(", ")
