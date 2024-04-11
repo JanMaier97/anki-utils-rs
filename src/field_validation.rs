@@ -56,8 +56,7 @@ impl ValidationType {
     }
 }
 
-pub fn execute(config: &ValidationConfig) -> MyResult<ValidationResult> {
-    let connector = AnkiConnect::default();
+pub fn execute(config: &ValidationConfig, connector: &AnkiConnect) -> MyResult<ValidationResult> {
     validate_config(config, &connector)?;
     execute_validation(config, &connector)
 }

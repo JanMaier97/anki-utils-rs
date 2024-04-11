@@ -1,3 +1,4 @@
+use anki_utils::anki::connect::AnkiConnect;
 use anki_utils::field_validation::ValidationConfig;
 use anki_utils::field_validation::ValidationResult;
 use anki_utils::{field_validation, MyResult};
@@ -15,6 +16,8 @@ use std::io::BufReader;
 )]
 struct CliArgs {
     config_file: String,
+    #[arg(long, help = "Automatically opens failed notes in the Anki note browser")]
+    browse: bool
 }
 
 fn main() -> MyResult<()> {
@@ -24,9 +27,15 @@ fn main() -> MyResult<()> {
     let reader = BufReader::new(f);
     let config: ValidationConfig = serde_json::from_reader(reader)?;
 
-    let result = field_validation::execute(&config)?;
+    let connector = AnkiConnect::default();
+    let result = field_validation::execute(&config, &connector)?;
 
     print_validation_result(&result);
+
+    if cli.browse {
+        let note_ids = result.validation_errors.keys().cloned().collect::<Vec<_>>();
+        connector.browse_notes(&note_ids)?;
+    }
 
     Ok(())
 }

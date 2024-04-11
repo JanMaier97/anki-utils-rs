@@ -59,6 +59,11 @@ struct NoteIdsRequest<'a> {
 }
 
 #[derive(Serialize)]
+struct GuiBrowseRequest<'a> {
+    query: &'a str,
+}
+
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ModelFieldNamesRequest<'a> {
     model_name: &'a str,
@@ -124,5 +129,17 @@ impl AnkiConnect {
 
     pub fn notes_info(&self, note_ids: &[NoteId]) -> AnkiConnectResult<Vec<NoteInfo>> {
         self.invoke("notesInfo", Some(NoteIdsRequest { notes: note_ids }))
+    }
+
+    pub fn browse_notes(&self, note_ids: &[NoteId]) -> AnkiConnectResult<()> {
+        let query = note_ids
+            .iter()
+            .map(|nid| format!("nid:{}", nid))
+            .collect::<Vec<_>>()
+            .join(" or ");
+
+        self.invoke::<_, Vec<u64>>("guiBrowse", Some(GuiBrowseRequest { query: &query }))?;
+
+        Ok(())
     }
 }
