@@ -47,7 +47,7 @@ impl ValidationType {
         }
     }
 
-    fn get_message(&self) -> String {
+    pub fn get_message(&self) -> String {
         match self {
             ValidationType::Required => "Missing required value".to_string(),
             ValidationType::MustNotInclude(invalid_value) => format!("Field contains invalid value '{}'", invalid_value),
