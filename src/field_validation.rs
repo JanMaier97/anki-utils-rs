@@ -73,6 +73,33 @@ pub fn execute(config: &ValidationConfig) -> MyResult<ValidationResult> {
 }
 
 fn validate_config(config: &ValidationConfig, connector: &AnkiConnect) -> MyResult<()> {
+    let model_name = connector
+        .model_names_and_ids()?
+        .into_iter()
+        .find(|(_, model_id)| *model_id == config.model_id)
+        .map(|(model_name, _)| model_name)
+        .ok_or(format!(
+            "Failed to find a model with the id {}",
+            config.model_id
+        ))?;
+
+    let field_names = connector.get_field_names(&model_name)?;
+    let invalid_field_names = config
+        .field_validations
+        .keys()
+        .filter(|key| !field_names.contains(key))
+        .map(|key| format!("'{}'", key))
+        .collect::<Vec<_>>();
+
+    if !invalid_field_names.is_empty() {
+        let field_list = invalid_field_names.join(", ");
+        let msg = format!(
+            "The specified model does not have these fields: {}",
+            field_list
+        );
+        return Err(msg.into());
+    }
+
     Ok(())
 }
 

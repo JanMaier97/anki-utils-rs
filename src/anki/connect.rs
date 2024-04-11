@@ -62,6 +62,12 @@ struct NoteIdsRequest<'a> {
     notes: &'a [NoteId],
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ModelFieldNamesRequest<'a> {
+    model_name: &'a str,
+}
+
 impl AnkiConnect {
     pub fn new() -> Self {
         Self {
@@ -121,6 +127,12 @@ impl AnkiConnect {
         let models = self.invoke::<(), _>("modelNamesAndIds", None)?;
 
         return Ok(models);
+    }
+
+    pub fn get_field_names(&self, model_name: &str) -> AnkiConnectResult<Vec<String>> {
+        let request = ModelFieldNamesRequest { model_name };
+
+        self.invoke("modelFieldNames", Some(request))
     }
 
     pub fn notes_info(&self, note_ids: &[NoteId]) -> AnkiConnectResult<Vec<NoteInfo>> {
