@@ -1,14 +1,17 @@
 use anki_utils::anki::connect::AnkiConnect;
+use anki_utils::field_validation;
 use anki_utils::field_validation::ValidationConfig;
 use anki_utils::field_validation::ValidationResult;
 use anki_utils::field_validation::ValidationType;
-use anki_utils::{field_validation, MyResult};
-use clap::ValueEnum;
+
+use anyhow::{anyhow, Context, Result};
 
 use clap::Parser;
+use clap::ValueEnum;
 
 use std::fs::File;
 use std::io::BufReader;
+use std::process::ExitCode;
 
 #[derive(Clone, PartialEq, ValueEnum)]
 enum CliValidationType {
@@ -45,12 +48,21 @@ struct CliArgs {
     validations: Vec<CliValidationType>,
 }
 
-fn main() -> MyResult<()> {
+fn main() -> ExitCode {
     let cli = CliArgs::parse();
+    if let Err(error) = run(cli) {
+        eprintln!("{}", error);
+        return ExitCode::FAILURE;
+    }
 
+    ExitCode::SUCCESS
+}
+
+fn run(cli: CliArgs) -> Result<()> {
     let f = File::open(&cli.config_file)?;
     let reader = BufReader::new(f);
-    let mut config: ValidationConfig = serde_json::from_reader(reader)?;
+    let mut config: ValidationConfig = serde_json::from_reader(reader)
+        .with_context(|| format!("Failed to read config file from '{}'", cli.config_file))?;
 
     apply_cli_args_on_config(&mut config, &cli)?;
 
@@ -61,20 +73,23 @@ fn main() -> MyResult<()> {
 
     if cli.browse {
         let note_ids = result.validation_errors.keys().cloned().collect::<Vec<_>>();
-        connector.browse_notes(&note_ids)?;
+        connector
+            .browse_notes(&note_ids)
+            .with_context(|| "Failed to open the Anki card browser")?;
     }
 
     Ok(())
 }
 
-fn apply_cli_args_on_config(config: &mut ValidationConfig, args: &CliArgs) -> MyResult<()> {
+fn apply_cli_args_on_config(config: &mut ValidationConfig, args: &CliArgs) -> Result<()> {
     apply_field_filter(config, args)?;
-    apply_validation_filter(config, args)
+    apply_validation_filter(config, args);
+    Ok(())
 }
 
-fn apply_validation_filter(config: &mut ValidationConfig, args: &CliArgs) -> MyResult<()> {
+fn apply_validation_filter(config: &mut ValidationConfig, args: &CliArgs) {
     if args.validations.is_empty() {
-        return Ok(());
+        return;
     }
 
     for (_, validations) in config.field_validations.iter_mut() {
@@ -84,8 +99,6 @@ fn apply_validation_filter(config: &mut ValidationConfig, args: &CliArgs) -> MyR
             .cloned()
             .collect::<Vec<_>>();
     }
-
-    Ok(())
 }
 
 fn map_validation_type(validation_type: &ValidationType) -> CliValidationType {
@@ -95,7 +108,7 @@ fn map_validation_type(validation_type: &ValidationType) -> CliValidationType {
         ValidationType::MustNotInclude(_) => CliValidationType::MustNotInclude,
     }
 }
-fn apply_field_filter(config: &mut ValidationConfig, args: &CliArgs) -> MyResult<()> {
+fn apply_field_filter(config: &mut ValidationConfig, args: &CliArgs) -> Result<()> {
     if args.fields.is_empty() {
         return Ok(());
     }
@@ -111,11 +124,10 @@ fn apply_field_filter(config: &mut ValidationConfig, args: &CliArgs) -> MyResult
 
     if !invalid_fields.is_empty() {
         let field_list = invalid_fields.join(", ");
-        let message = format!(
+        return Err(anyhow!(
             "The fields filter must specify fields from the config: {}",
             field_list
-        );
-        return Err(message.into());
+        ));
     }
 
     let fields_to_remove: Vec<_> = config_fields

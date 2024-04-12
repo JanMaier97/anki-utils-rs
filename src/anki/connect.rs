@@ -1,7 +1,57 @@
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{collections::HashMap, error::Error};
+use std::collections::HashMap;
 
-pub type AnkiConnectResult<T> = Result<T, Box<dyn Error>>;
+pub type AnkiConnectResult<T> = Result<T, ClientError>;
+
+struct HttpClient {
+    client: reqwest::blocking::Client,
+}
+
+impl HttpClient {
+    fn post(&self, url: &str, payload: &serde_json::Value) -> Result<String, HttpError> {
+        let response = self.client.post(url).json(payload).send()?;
+
+        if !response.status().is_success() {
+            return Err(HttpError::StatusCode(response));
+        }
+
+        response.text().map_err(Into::into)
+    }
+}
+
+impl Default for HttpClient {
+    fn default() -> Self {
+        HttpClient {
+            client: reqwest::blocking::Client::new(),
+        }
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ClientError {
+    #[error("json serialize error: {0}")]
+    SerializeJson(serde_json::Error),
+
+    #[error("json parse error: {0}")]
+    ParseJson(serde_json::Error),
+
+    #[error("http error: {0}")]
+    Http(#[from] HttpError),
+
+    #[error("Anki error: {0}")]
+    ReceivedError(String),
+
+    #[error("Anki returned without a result value")]
+    MissingResult,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum HttpError {
+    #[error("request: {0}")]
+    Client(#[from] reqwest::Error),
+    #[error("status code {}", reqwest::blocking::Response::status(.0))]
+    StatusCode(reqwest::blocking::Response),
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Field {
@@ -14,7 +64,7 @@ type Fields = HashMap<String, Field>;
 
 pub struct AnkiConnect {
     version: u32,
-    client: reqwest::blocking::Client,
+    client: HttpClient,
     hostname: String,
 }
 
@@ -73,7 +123,7 @@ impl Default for AnkiConnect {
     fn default() -> Self {
         Self {
             version: 6,
-            client: reqwest::blocking::Client::new(),
+            client: HttpClient::default(),
             hostname: "http://172.18.48.1".to_string(),
         }
     }
@@ -96,22 +146,17 @@ impl AnkiConnect {
         };
 
         let address = format!("{}:8765", self.hostname);
-        let response = self
-            .client
-            .post(address)
-            .json(&request)
-            .send()?
-            .json::<AnkiConnectResponse<TResult>>()?;
+        let value = serde_json::to_value(request).map_err(ClientError::SerializeJson)?;
+        let response = self.client.post(&address, &value)?;
+
+        let response = serde_json::from_str::<AnkiConnectResponse<TResult>>(&response)
+            .map_err(ClientError::ParseJson)?;
 
         if let Some(error) = response.error {
-            return Err(error.into());
+            return Err(ClientError::ReceivedError(error));
         }
 
-        let Some(result) = response.result else {
-            return Err("Anki connect returned no result".into());
-        };
-
-        Ok(result)
+        response.result.ok_or(ClientError::MissingResult)
     }
 
     pub fn find_notes(&self, query: &str) -> AnkiConnectResult<Vec<NoteId>> {
