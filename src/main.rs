@@ -10,7 +10,7 @@ use clap::Parser;
 use clap::ValueEnum;
 
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{self, BufReader, Write};
 use std::process::ExitCode;
 
 #[derive(Clone, PartialEq, ValueEnum)]
@@ -69,7 +69,7 @@ fn run(cli: CliArgs) -> Result<()> {
     let connector = AnkiConnect::default();
     let result = field_validation::execute(&config, &connector)?;
 
-    print_validation_result(&result);
+    print_validation_result(&result)?;
 
     if cli.browse {
         let note_ids = result.validation_errors.keys().cloned().collect::<Vec<_>>();
@@ -142,7 +142,7 @@ fn apply_field_filter(config: &mut ValidationConfig, args: &CliArgs) -> Result<(
     Ok(())
 }
 
-fn print_validation_result(result: &ValidationResult) {
+fn print_validation_result(result: &ValidationResult) -> Result<()> {
     let field_name_header = "Field Name";
     let error_message_header = "Error Message";
 
@@ -164,43 +164,54 @@ fn print_validation_result(result: &ValidationResult) {
         .unwrap_or(0)
         .max(error_message_header.len());
 
-    println!(
+    let stdout = io::stdout();
+    let mut handle = io::BufWriter::new(stdout);
+
+    writeln!(
+        handle,
         "|-{}-|-{}-|-{}-|",
         "-".repeat(20),
         "-".repeat(max_field_length),
         "-".repeat(max_message_length)
-    );
-    println!(
+    )?;
+    writeln!(
+        handle,
         "| {:<20} | {:<max_field_length$} | {:<max_message_length$} |",
         "Note Id", field_name_header, error_message_header
-    );
-    println!(
+    )?;
+    writeln!(
+        handle,
         "|-{}-|-{}-|-{}-|",
         "-".repeat(20),
         "-".repeat(max_field_length),
         "-".repeat(max_message_length)
-    );
+    )?;
 
     for (note_id, field_error_map) in result.validation_errors.iter() {
         for (field_name, error) in field_error_map {
-            println!(
+            writeln!(
+                handle,
                 "| {:>20} | {:<max_field_length$} | {:<max_message_length$} |",
                 note_id,
                 field_name,
                 error.get_message()
-            );
+            )?;
         }
     }
 
-    println!(
+    writeln!(
+        handle,
         "|-{}-|-{}-|-{}-|",
         "-".repeat(20),
         "-".repeat(max_field_length),
         "-".repeat(max_message_length)
-    );
-    println!();
-    println!(
+    )?;
+    writeln!(handle)?;
+    writeln!(
+        handle,
         "{} notes have been validated, {} notes failed",
         result.total_note_count, result.failed_note_count
-    );
+    )?;
+
+    Ok(())
 }
