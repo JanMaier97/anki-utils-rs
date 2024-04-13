@@ -1,60 +1,8 @@
 use anyhow::{anyhow, Result};
-use serde::Deserialize;
 use std::collections::HashMap;
 
-use crate::anki::connect::{AnkiConnect, NoteInfo};
+use crate::{anki::connect::{AnkiConnect, NoteInfo}, ValidationConfig, ValidationResult, ValidationType};
 
-#[derive(Debug, Deserialize)]
-pub struct ValidationConfig {
-    model_id: u64,
-    pub field_validations: HashMap<String, Vec<ValidationType>>,
-}
-
-#[derive(Debug)]
-pub struct ValidationResult {
-    pub total_note_count: usize,
-    pub failed_note_count: usize,
-    pub validation_errors: HashMap<u64, HashMap<String, ValidationType>>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(tag = "type", content = "check")]
-pub enum ValidationType {
-    Required,
-    ValueList(Vec<String>),
-    MustNotInclude(String),
-}
-
-impl ValidationType {
-    fn is_valid(&self, value: &str) -> bool {
-        match self {
-            ValidationType::Required => !value.trim().is_empty(),
-            ValidationType::MustNotInclude(invalid_value) => !value.contains(invalid_value),
-            ValidationType::ValueList(values) => {
-                if value.is_empty() {
-                    return true;
-                }
-                value
-                    .split(',')
-                    .map(|s| s.trim().to_string())
-                    .all(|s| values.contains(&s))
-            }
-        }
-    }
-
-    pub fn get_message(&self) -> String {
-        match self {
-            ValidationType::Required => "Missing required value".to_string(),
-            ValidationType::MustNotInclude(invalid_value) => {
-                format!("Field contains invalid value '{}'", invalid_value)
-            }
-            ValidationType::ValueList(values) => format!(
-                "Field must only contain valid values: {}",
-                values.join(", ")
-            ),
-        }
-    }
-}
 
 pub fn execute(config: &ValidationConfig, connector: &AnkiConnect) -> Result<ValidationResult> {
     validate_config(config, connector)?;
