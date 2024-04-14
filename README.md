@@ -15,13 +15,14 @@ Install the [AnkiConnect](https://ankiweb.net/shared/info/2055492159) plugin in 
 ## Note Validator
 
 Todos:
+- [ ] Add 'tag required' validation
+- [ ] Add 'tag starts with' validation
 - [ ] Add integration tests
 - [ ] Add logging
 - [ ] Add value sets validation
 - [ ] CLI: Parameter for different port
 - [ ] CLI: Parameter for different url (default: localhost)
 - [ ] Refactor anki request api
-- [x] Refactor validation libary 
 - [x] CLI: Parameter for config
 - [x] CLI: Parameter to filter error types
 - [x] CLI: Parameter to filter field names
@@ -29,6 +30,7 @@ Todos:
 - [x] CLI: Print validation errors in a table format to the browser
 - [x] Print error messages to stderr
 - [x] Refactor table print and write to buffer instead
+- [x] Refactor validation libary 
 - [x] Try error handling with `anyhow` crate
 - [x] Try error handling with `this-error` crate
 - [x] Validate note model and field values provided in config
