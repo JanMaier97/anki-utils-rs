@@ -82,7 +82,8 @@ fn validate_config(config: &ValidationConfig, connector: &AnkiConnect) -> Result
     if !invalid_field_names.is_empty() {
         let field_list = invalid_field_names.join(", ");
         return Err(anyhow!(
-            "The specified model does not have these fields: {}",
+            "The note type '{}' does not have these fields: {}",
+            config.note_type,
             field_list
         ));
     }
