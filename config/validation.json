@@ -1,0 +1,15 @@
+{
+    "note_type": "Japanese Vocabulary",
+    "field_validations": {
+        "German": [
+            {"type": "Required"}
+        ],
+        "Word Type": [
+            {"type": "Required"},
+            {"type": "ValueList", "check": ["N", "VN", "u-Vi", "u-Vt", "ru-Vi", "ru-Vt", "irr-V", "Phr", "A", "ANa", "ANo", "irr-A", "An", "Adv", "DemP", "DemA", "Conj", "Prt", "Ctr", "Pref", "Suf", "Phr", "Int"]}
+        ],
+        "Pronunciation": [
+            {"type": "MustNotInclude", "check": "No pitch accent data"}
+        ]
+    }
+}
