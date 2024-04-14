@@ -8,7 +8,6 @@ Install the [AnkiConnect](https://ankiweb.net/shared/info/2055492159) plugin in 
 
 # Utilities
 
-
 ## Kanji Extractor
 
 **coming some time later **
@@ -16,11 +15,29 @@ Install the [AnkiConnect](https://ankiweb.net/shared/info/2055492159) plugin in 
 ## Note Validator
 
 Todos:
+- [ ] Add integration tests
+- [ ] Add logging
 - [ ] Add value sets validation
-- [ ] Add command line interface
-    - [ ] Parameter for config
-    - [ ] Print validation errors in a table format to the browser
-    - [ ] Parameter to open notes in the Anki browser
-    - [ ] Parameter to filter field names
-    - [ ] Parameter to filter error types
-    - [ ] Parameter to change the grouping
+- [ ] CLI: Parameter for different port
+- [ ] CLI: Parameter for different url (default: localhost)
+- [ ] Refactor anki request api
+- [x] Refactor validation libary 
+- [x] CLI: Parameter for config
+- [x] CLI: Parameter to filter error types
+- [x] CLI: Parameter to filter field names
+- [x] CLI: Parameter to open notes in the Anki browser
+- [x] CLI: Print validation errors in a table format to the browser
+- [x] Print error messages to stderr
+- [x] Refactor table print and write to buffer instead
+- [x] Try error handling with `anyhow` crate
+- [x] Try error handling with `this-error` crate
+- [x] Validate note model and field values provided in config
+
+**Notes**:
+- For the anki rest api wrapper these guides could help:
+    - https://plume.benboeckel.net/~/JustAnotherBlog/designing-rust-bindings-for-rest-ap-is
+    - https://dev.to/rogertorres/rest-api-wrapper-with-rust-mk4
+    - https://nullderef.com/blog/web-api-client/
+- Support different versions
+- Support different http clients
+- Support async and blocking requests
