@@ -1,7 +1,6 @@
-use std::process::ExitCode;
-
 use anki_utils::{run, CliArgs};
 use clap::Parser;
+use std::process::ExitCode;
 
 fn main() -> ExitCode {
     let cli = CliArgs::parse();

@@ -75,7 +75,7 @@ struct AnkiConnectResponse<T> {
 }
 
 #[derive(Serialize)]
-struct AnkiconnectRequest<'a, T> {
+struct AnkiConnectRequest<'a, T> {
     version: u32,
     action: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -139,7 +139,7 @@ impl AnkiConnect {
         TParams: Serialize,
         TResult: DeserializeOwned,
     {
-        let request = AnkiconnectRequest {
+        let request = AnkiConnectRequest {
             version: self.version,
             action,
             params,
