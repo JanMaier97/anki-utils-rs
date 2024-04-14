@@ -6,7 +6,7 @@ use crate::anki::connect::{AnkiConnect, NoteInfo};
 
 #[derive(Debug, Deserialize)]
 pub struct ValidationConfig {
-    model_id: u64,
+    note_type: String,
     pub field_validations: HashMap<String, Vec<ValidationType>>,
 }
 
@@ -64,12 +64,11 @@ pub fn execute(config: &ValidationConfig, connector: &AnkiConnect) -> Result<Val
 fn validate_config(config: &ValidationConfig, connector: &AnkiConnect) -> Result<()> {
     let model_name = connector
         .model_names_and_ids()?
-        .into_iter()
-        .find(|(_, model_id)| *model_id == config.model_id)
-        .map(|(model_name, _)| model_name)
+        .into_keys()
+        .find(|note_type| *note_type == config.note_type)
         .ok_or(anyhow!(
-            "Failed to find a model with the id {}",
-            config.model_id
+            "Failed to find a note type with the name '{}'",
+            config.note_type
         ))?;
 
     let field_names = connector.get_field_names(&model_name)?;
@@ -95,7 +94,7 @@ fn execute_validation(
     config: &ValidationConfig,
     connector: &AnkiConnect,
 ) -> Result<ValidationResult> {
-    let query = format!("mid:{}", config.model_id);
+    let query = format!("\"note:{}\"", config.note_type);
     let note_ids = connector.find_notes(&query)?;
     let notes = connector.notes_info(&note_ids)?;
 
@@ -126,7 +125,7 @@ fn get_first_failing_validation_per_field(
             let field = note.fields.get(field_name).ok_or(anyhow!(
                 "The field '{}' for note type '{}' does not exist",
                 field_name,
-                config.model_id
+                config.note_type
             ))?;
 
             if !validation.is_valid(&field.value) {

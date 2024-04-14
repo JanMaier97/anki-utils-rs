@@ -1,5 +1,5 @@
 {
-    "model_id": 1576932125743,
+    "note_type": "Japanese (recognition&recall)",
     "field_validations": {
         "Type": [
             {"type": "Required"},
