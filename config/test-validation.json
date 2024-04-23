@@ -1,5 +1,6 @@
 {
     "note_type": "Japanese (recognition&recall)",
+    "include_suspended": false,
     "field_validations": {
         "Type": [
             {"type": "Required"},

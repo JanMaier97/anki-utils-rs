@@ -1,5 +1,6 @@
 {
     "note_type": "Japanese Vocabulary",
+    "include_suspended": false,
     "field_validations": {
         "German": [
             {"type": "Required"}

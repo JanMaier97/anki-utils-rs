@@ -6,6 +6,7 @@ use crate::anki::connect::{AnkiConnect, NoteInfo};
 
 #[derive(Debug, Deserialize)]
 pub struct ValidationConfig {
+    include_suspended: bool,
     note_type: String,
     pub field_validations: HashMap<String, Vec<ValidationType>>,
 }
@@ -91,11 +92,21 @@ fn validate_config(config: &ValidationConfig, connector: &AnkiConnect) -> Result
     Ok(())
 }
 
+fn build_note_query(config: &ValidationConfig) -> String {
+    let query = format!("\"note:{}\"", config.note_type);
+
+    if config.include_suspended {
+        return query;
+    }
+
+    query + " -is:suspended"
+}
+
 fn execute_validation(
     config: &ValidationConfig,
     connector: &AnkiConnect,
 ) -> Result<ValidationResult> {
-    let query = format!("\"note:{}\"", config.note_type);
+    let query = build_note_query(config);
     let note_ids = connector.find_notes(&query)?;
     let notes = connector.notes_info(&note_ids)?;
 
