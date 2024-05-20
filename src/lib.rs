@@ -52,7 +52,7 @@ pub fn run(cli: CliArgs) -> Result<()> {
     print_validation_result(&result)?;
 
     if cli.browse {
-        let note_ids = result.validation_errors.keys().take(998).cloned().collect::<Vec<_>>();
+        let note_ids = result.validation_errors.keys().take(997).cloned().collect::<Vec<_>>();
         connector
             .browse_notes(&note_ids)
             .with_context(|| "Failed to open the Anki card browser")?;
